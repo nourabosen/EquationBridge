@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Equation Bridge",
+  "version": "3.0",
+  "description": "Inserts editable equations from Markdown/LaTeX into Google Docs via the native equation editor.",
+  "permissions": [
+    "clipboardRead",
+    "clipboardWrite",
+    "activeTab",
+    "scripting",
+    "contextMenus",
+    "debugger"
+  ],
+  "host_permissions": [
+    "*://docs.google.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://docs.google.com/document/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

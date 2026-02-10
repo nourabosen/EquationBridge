@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Equation Bridge</title>
+  <link rel="stylesheet" href="libs/katex/katex.min.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>Equation Bridge</h1>
+    <p class="subtitle">Markdown + LaTeX &rarr; Google Docs editable equations</p>
+  </header>
+
+  <!-- Step 1: Input -->
+  <section id="step-input">
+    <label for="input-text">Paste your Markdown / LaTeX source:</label>
+    <textarea id="input-text" placeholder="Paste Markdown with equations here&#10;e.g.  The model is $$y_t = \tau + \sum_{m=1}^{M} \beta_m$$"></textarea>
+    <div class="btn-row">
+      <button id="load-btn" class="btn secondary" title="Read from system clipboard">
+        Load from Clipboard
+      </button>
+      <button id="parse-btn" class="btn primary">
+        Parse &amp; Preview
+      </button>
+    </div>
+  </section>
+
+  <!-- Step 2: Preview parsed segments -->
+  <section id="step-preview" class="hidden">
+    <h2>Parsed Segments</h2>
+    <div id="segments-list"></div>
+
+    <div class="note-box">
+      <strong>Note:</strong> When you click "Insert", Chrome will show a
+      <em>"started debugging this browser"</em> bar at the top.
+      This is normal — the extension needs it to send real keystrokes
+      to Google Docs. It disappears automatically when done.
+    </div>
+
+    <div class="btn-row">
+      <button id="back-btn" class="btn secondary">&larr; Back</button>
+      <button id="insert-btn" class="btn primary">Insert into Google Docs</button>
+    </div>
+  </section>
+
+  <!-- Step 3: Running -->
+  <section id="step-running" class="hidden">
+    <h2>Inserting…</h2>
+    <div id="run-status" class="status-box">Starting…</div>
+    <progress id="run-progress" max="100" value="0"></progress>
+    <p class="warn-text">Keep this popup open until insertion finishes.</p>
+    <div class="btn-row">
+      <button id="run-done-btn" class="btn primary hidden">Done</button>
+    </div>
+  </section>
+
+  <!-- Global flash -->
+  <div id="global-status" class="global-status"></div>
+
+  <script src="libs/katex/katex.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
