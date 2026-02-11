@@ -287,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function pressSpace()  { await pressKey(' ', 'Space', 32, 0, ' '); }
+  async function pressBackspace() { await pressKey('Backspace', 'Backspace', 8); }
   async function pressTab()    { await pressKey('Tab', 'Tab', 9); }
   async function pressEnter()  { await pressKey('Enter', 'Enter', 13, 0, '\r'); }
   async function pressEscape() { await pressKey('Escape', 'Escape', 27); }
@@ -378,7 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function closeEquationEditor() {
-    await pressEscape();
+    await pressRight();
+    await pressRight();
     await sleep(200);
   }
 
@@ -390,8 +392,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // =======================================================================
   // LaTeX → action list translator
-  // (Same parser as before — converts LaTeX to a flat array of actions
-  //  that the GDocs equation editor interprets.)
   // =======================================================================
 
   const TEMPLATE_CMDS = new Set(['\\frac']);
@@ -399,6 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
     '\\sqrt','\\cbrt','\\hat','\\bar','\\vec','\\tilde','\\dot','\\ddot',
     '\\overline','\\underline','\\widehat','\\widetilde','\\overrightarrow',
   ]);
+  
+  // SIMPLE_CMDS set - only one definition
   const SIMPLE_CMDS   = new Set([
     '\\alpha','\\beta','\\gamma','\\delta','\\epsilon','\\varepsilon',
     '\\zeta','\\eta','\\theta','\\vartheta','\\iota','\\kappa',
@@ -408,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
     '\\Gamma','\\Delta','\\Theta','\\Lambda','\\Xi','\\Pi',
     '\\Sigma','\\Upsilon','\\Phi','\\Psi','\\Omega',
     '\\sum','\\prod','\\coprod','\\int','\\iint','\\iiint',
-    '\\oint','\\bigcup','\\bigcap',
+    '\\oint','\\bigcup','\\bigcap','\\bigoplus','\\bigotimes',
     '\\leq','\\geq','\\neq','\\approx','\\equiv','\\sim',
     '\\simeq','\\cong','\\propto','\\ll','\\gg','\\subset',
     '\\supset','\\subseteq','\\supseteq','\\in','\\notin',
@@ -429,119 +431,218 @@ document.addEventListener('DOMContentLoaded', () => {
     '\\quad','\\qquad',
   ]);
 
+  // latexToActions function - only one definition
   function latexToActions(latex) {
     const A = [];
     let i = 0;
-    const pushT  = ch => A.push({ a:'type', v:ch });
-    const pushSp = ()  => A.push({ a:'space' });
-    const pushTb = ()  => A.push({ a:'tab' });
-    const pushRt = ()  => A.push({ a:'right' });
+    const pushT = ch => A.push({ a: 'type', v: ch });
+    const pushSp = () => A.push({ a: 'space' });
+    const pushTb = () => A.push({ a: 'tab' });
+    const pushRt = () => A.push({ a: 'right' });
 
     function braceGroup(p) {
-      if (p >= latex.length || latex[p] !== '{') return null;
-      let d = 0, s = p + 1, j = p;
-      while (j < latex.length) {
-        if (latex[j] === '{') d++; else if (latex[j] === '}') { d--; if (!d) break; }
-        j++;
-      }
-      return { content: latex.substring(s, j), end: j + 1 };
+        if (p >= latex.length || latex[p] !== '{') return null;
+        let d = 0, s = p + 1, j = p;
+        while (j < latex.length) {
+            if (latex[j] === '{') d++;
+            else if (latex[j] === '}') {
+                d--;
+                if (!d) break;
+            }
+            j++;
+        }
+        return { content: latex.substring(s, j), end: j + 1 };
     }
+
     function readArg(p) {
-      if (p >= latex.length) return { content:'', end:p };
-      if (latex[p] === '{') return braceGroup(p);
-      if (latex[p] === '\\') {
-        let j = p+1;
-        while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
-        return { content: latex.substring(p,j), end: j };
-      }
-      return { content: latex[p], end: p+1 };
+        if (p >= latex.length) return { content: '', end: p };
+        if (latex[p] === '{') return braceGroup(p);
+        if (latex[p] === '\\') {
+            let j = p + 1;
+            while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
+            return { content: latex.substring(p, j), end: j };
+        }
+        return { content: latex[p], end: p + 1 };
     }
 
     while (i < latex.length) {
-      if (latex[i] === ' ' || latex[i] === '\t') { pushSp(); i++; continue; }
-
-      if (latex[i] === '\\') {
-        let j = i+1;
-        if (j < latex.length && !/[a-zA-Z]/.test(latex[j])) {
-          const sc = latex.substring(i, j+1);
-          if (sc === '\\\\')       A.push({ a:'enter' });
-          else if ('\\,\\;\\!\\ '.includes(sc)) pushSp();
-          else if (sc === '\\{')   pushT('(');
-          else if (sc === '\\}')   pushT(')');
-          else                     pushT(latex[j]);
-          i = j+1; continue;
-        }
-        while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
-        const cmd = latex.substring(i, j);
-        i = j;
-
-        // Skip formatting commands that GDocs doesn't support
-        if (['\\left', '\\right', '\\displaystyle', '\\textstyle', '\\limits', '\\nolimits'].includes(cmd)) {
-          continue;
+        // Skip whitespace - equations don't need spaces
+        if (latex[i] === ' ' || latex[i] === '\t') {
+            i++;
+            continue;
         }
 
-        // text-like commands — wrap in quotes for GDocs text mode
-        if (['\\text','\\mathrm','\\textrm','\\textit','\\textbf',
-             '\\mathbf','\\mathit','\\mathcal','\\mathbb'].includes(cmd)) {
-          const g = braceGroup(i);
-          if (g) {
-            pushT('"'); // enter text mode
-            for (const c of g.content) pushT(c);
-            pushT('"'); // exit text mode
-            i = g.end;
-          }
-          continue;
-        }
-        // \frac{a}{b}
-        if (TEMPLATE_CMDS.has(cmd)) {
-          for (const c of cmd) pushT(c);
-          pushSp();
-          const a1 = braceGroup(i);
-          if (a1) { A.push(...latexToActions(a1.content)); i = a1.end; }
-          pushTb();
-          const a2 = braceGroup(i);
-          if (a2) { A.push(...latexToActions(a2.content)); i = a2.end; }
-          pushRt();
-          continue;
-        }
-        // \sqrt{x}
-        if (SINGLE_TMPL.has(cmd)) {
-          for (const c of cmd) pushT(c);
-          pushSp();
-          const g = braceGroup(i);
-          if (g) { A.push(...latexToActions(g.content)); i = g.end; }
-          pushRt();
-          continue;
-        }
-        // simple symbol: \alpha etc.
-        if (SIMPLE_CMDS.has(cmd)) {
-          for (const c of cmd) pushT(c);
-          pushSp();
-          continue;
-        }
-        // unknown command — best effort
-        for (const c of cmd) pushT(c);
-        pushSp();
-        if (i < latex.length && latex[i] === '{') {
-          const g = braceGroup(i);
-          if (g) { A.push(...latexToActions(g.content)); i = g.end; pushRt(); }
-        }
-        continue;
-      }
+        if (latex[i] === '\\') {
+            let j = i + 1;
+            // Handle single-character escaped symbols
+            if (j < latex.length && !/[a-zA-Z]/.test(latex[j])) {
+                const sc = latex.substring(i, j + 1);
+                if (sc === '\\\\') A.push({ a: 'enter' });
+                else if (sc === '\\{') pushT('(');
+                else if (sc === '\\}') pushT(')');
+                else pushT(latex[j]);
+                i = j + 1;
+                continue;
+            }
+            
+            // Read the full command
+            while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
+            const cmd = latex.substring(i, j);
+            i = j;
 
-      if (latex[i] === '^') {
-        i++; pushT('^');
-        const a = readArg(i); A.push(...latexToActions(a.content)); i = a.end;
-        pushRt(); continue;
-      }
-      if (latex[i] === '_') {
-        i++; pushT('_');
-        const a = readArg(i); A.push(...latexToActions(a.content)); i = a.end;
-        pushRt(); continue;
-      }
-      if (latex[i] === '{' || latex[i] === '}') { i++; continue; }
-      pushT(latex[i]); i++;
+            // Skip unsupported commands
+            if (['\\left', '\\right', '\\displaystyle', '\\textstyle'].includes(cmd)) {
+                continue;
+            }
+
+            // Text commands
+            if (['\\text', '\\mathrm', '\\textrm', '\\textit', '\\textbf',
+                 '\\mathbf', '\\mathit', '\\mathcal', '\\mathbb'].includes(cmd)) {
+                const g = braceGroup(i);
+                if (g) {
+                    pushT('"');
+                    for (const c of g.content) pushT(c);
+                    pushT('"');
+                    i = g.end;
+                }
+                continue;
+            }
+
+            // \frac{a}{b}
+            if (cmd === '\\frac') {
+                // Type the command and press space to convert
+                for (const c of cmd) pushT(c);
+                pushSp();
+                
+                const a1 = braceGroup(i);
+                if (a1) {
+                    A.push(...latexToActions(a1.content));
+                    i = a1.end;
+                }
+                
+                pushTb(); // Tab to denominator
+                
+                const a2 = braceGroup(i);
+                if (a2) {
+                    A.push(...latexToActions(a2.content));
+                    i = a2.end;
+                }
+                
+                pushRt(); // Right arrow to exit fraction
+                continue;
+            }
+
+            // \sqrt{x}
+            if (SINGLE_TMPL.has(cmd)) {
+                for (const c of cmd) pushT(c);
+                pushSp(); // Space to convert command
+                
+                const g = braceGroup(i);
+                if (g) {
+                    A.push(...latexToActions(g.content));
+                    i = g.end;
+                }
+                
+                pushRt(); // Right arrow to exit
+                continue;
+            }
+
+            // Simple symbols: \alpha, \sum, etc.
+            if (SIMPLE_CMDS.has(cmd)) {
+                // Type the command
+                for (const c of cmd) pushT(c);
+                
+                // For math symbols, we need space to convert
+                pushSp();
+
+                // Robustness for common user error: \sum{limit} instead of \sum_{limit}
+                if (['\\sum', '\\prod', '\\int', '\\iint', '\\iiint', '\\oint', '\\lim', '\\bigcup', '\\bigcap'].includes(cmd)) {
+                    if (i < latex.length && latex[i] === '{') {
+                        pushT('_');
+                        const g = braceGroup(i);
+                        if (g) {
+                            A.push(...latexToActions(g.content));
+                            i = g.end;
+                            pushRt();
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // Unknown command - type it and press space to try conversion
+            for (const c of cmd) pushT(c);
+            pushSp();
+            
+            // Handle arguments if any
+            if (i < latex.length && latex[i] === '{') {
+                const g = braceGroup(i);
+                if (g) {
+                    A.push(...latexToActions(g.content));
+                    i = g.end;
+                    pushRt();
+                }
+            }
+            continue;
+        }
+
+        // Subscript
+        if (latex[i] === '_') {
+            i++;
+            pushT('_');
+            
+            // Check if the next character is {
+            if (i < latex.length && latex[i] === '{') {
+                const g = braceGroup(i);
+                if (g) {
+                    A.push(...latexToActions(g.content));
+                    i = g.end;
+                }
+            } else {
+                // Single character subscript
+                const a = readArg(i);
+                A.push(...latexToActions(a.content));
+                i = a.end;
+            }
+            
+            pushRt(); // Right arrow to exit subscript
+            continue;
+        }
+
+        // Superscript
+        if (latex[i] === '^') {
+            i++;
+            pushT('^');
+            
+            // Check if the next character is {
+            if (i < latex.length && latex[i] === '{') {
+                const g = braceGroup(i);
+                if (g) {
+                    A.push(...latexToActions(g.content));
+                    i = g.end;
+                }
+            } else {
+                // Single character superscript
+                const a = readArg(i);
+                A.push(...latexToActions(a.content));
+                i = a.end;
+            }
+            
+            pushRt(); // Right arrow to exit superscript
+            continue;
+        }
+
+        // Skip braces
+        if (latex[i] === '{' || latex[i] === '}') {
+            i++;
+            continue;
+        }
+
+        // Regular character
+        pushT(latex[i]);
+        i++;
     }
+    
     return A;
   }
 
