@@ -14,23 +14,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // =======================================================================
   // DOM references
   // =======================================================================
-  const inputText       = document.getElementById('input-text');
-  const loadBtn         = document.getElementById('load-btn');
-  const parseBtn        = document.getElementById('parse-btn');
-  const stepInput       = document.getElementById('step-input');
-  const stepPreview     = document.getElementById('step-preview');
-  const stepRunning     = document.getElementById('step-running');
-  const segmentsList    = document.getElementById('segments-list');
-  const backBtn         = document.getElementById('back-btn');
-  const insertBtn       = document.getElementById('insert-btn');
-  const runStatus       = document.getElementById('run-status');
-  const runProgress     = document.getElementById('run-progress');
-  const runDoneBtn      = document.getElementById('run-done-btn');
-  const globalStatus    = document.getElementById('global-status');
+  const inputText = document.getElementById('input-text');
+  const loadBtn = document.getElementById('load-btn');
+  const parseBtn = document.getElementById('parse-btn');
+  const stepInput = document.getElementById('step-input');
+  const stepPreview = document.getElementById('step-preview');
+  const stepRunning = document.getElementById('step-running');
+  const segmentsList = document.getElementById('segments-list');
+  const backBtn = document.getElementById('back-btn');
+  const insertBtn = document.getElementById('insert-btn');
+  const runStatus = document.getElementById('run-status');
+  const runProgress = document.getElementById('run-progress');
+  const runDoneBtn = document.getElementById('run-done-btn');
+  const globalStatus = document.getElementById('global-status');
 
   let parsedSegments = [];
-  let activeTabId    = null;
-  let dbgAttached    = false;
+  let activeTabId = null;
+  let dbgAttached = false;
 
   // =======================================================================
   // Section visibility
@@ -196,11 +196,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (c >= 65 && c <= 90) return c;
     if (c >= 48 && c <= 57) return c;
     const map = {
-      ' ':32, '`':192,'~':192, '-':189,'_':189, '=':187,'+':187,
-      '[':219,'{':219, ']':221,'}':221, '\\':220,'|':220,
-      ';':186,':':186, "'":222,'"':222, ',':188,'<':188,
-      '.':190,'>':190, '/':191,'?':191,
-      '!':49,'@':50,'#':51,'$':52,'%':53,'^':54,'&':55,'*':56,'(':57,')':48,
+      ' ': 32, '`': 192, '~': 192, '-': 189, '_': 189, '=': 187, '+': 187,
+      '[': 219, '{': 219, ']': 221, '}': 221, '\\': 220, '|': 220,
+      ';': 186, ':': 186, "'": 222, '"': 222, ',': 188, '<': 188,
+      '.': 190, '>': 190, '/': 191, '?': 191,
+      '!': 49, '@': 50, '#': 51, '$': 52, '%': 53, '^': 54, '&': 55, '*': 56, '(': 57, ')': 48,
     };
     return map[ch] || 0;
   }
@@ -209,14 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (/^[A-Z]$/.test(u)) return 'Key' + u;
     if (/^[0-9]$/.test(ch)) return 'Digit' + ch;
     const map = {
-      ' ':'Space','`':'Backquote','~':'Backquote','-':'Minus','_':'Minus',
-      '=':'Equal','+':'Equal','[':'BracketLeft','{':'BracketLeft',
-      ']':'BracketRight','}':'BracketRight','\\':'Backslash','|':'Backslash',
-      ';':'Semicolon',':':'Semicolon',"'":"Quote",'"':'Quote',
-      ',':'Comma','<':'Comma','.':'Period','>':'Period',
-      '/':'Slash','?':'Slash',
-      '!':'Digit1','@':'Digit2','#':'Digit3','$':'Digit4','%':'Digit5',
-      '^':'Digit6','&':'Digit7','*':'Digit8','(':'Digit9',')':'Digit0',
+      ' ': 'Space', '`': 'Backquote', '~': 'Backquote', '-': 'Minus', '_': 'Minus',
+      '=': 'Equal', '+': 'Equal', '[': 'BracketLeft', '{': 'BracketLeft',
+      ']': 'BracketRight', '}': 'BracketRight', '\\': 'Backslash', '|': 'Backslash',
+      ';': 'Semicolon', ':': 'Semicolon', "'": "Quote", '"': 'Quote',
+      ',': 'Comma', '<': 'Comma', '.': 'Period', '>': 'Period',
+      '/': 'Slash', '?': 'Slash',
+      '!': 'Digit1', '@': 'Digit2', '#': 'Digit3', '$': 'Digit4', '%': 'Digit5',
+      '^': 'Digit6', '&': 'Digit7', '*': 'Digit8', '(': 'Digit9', ')': 'Digit0',
     };
     return map[ch] || '';
   }
@@ -230,9 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
    * (generates keypress + beforeinput + input DOM events).
    */
   async function typeChar(ch) {
-    const vk   = charToVK(ch);
+    const vk = charToVK(ch);
     const code = charToCode(ch);
-    const mod  = needsShift(ch) ? 8 : 0;
+    const mod = needsShift(ch) ? 8 : 0;
 
     await dbgSend(activeTabId, 'Input.dispatchKeyEvent', {
       type: 'keyDown',
@@ -286,14 +286,16 @@ document.addEventListener('DOMContentLoaded', () => {
     await sleep(350);
   }
 
-  async function pressSpace()  { await pressKey(' ', 'Space', 32, 0, ' '); }
+  async function pressSpace() { await pressKey(' ', 'Space', 32, 0, ' '); }
   async function pressBackspace() { await pressKey('Backspace', 'Backspace', 8); }
-  async function pressTab()    { await pressKey('Tab', 'Tab', 9); }
-  async function pressEnter()  { await pressKey('Enter', 'Enter', 13, 0, '\r'); }
+  async function pressTab() { await pressKey('Tab', 'Tab', 9); }
+  async function pressEnter() { await pressKey('Enter', 'Enter', 13, 0, '\r'); }
   async function pressEscape() { await pressKey('Escape', 'Escape', 27); }
-  async function pressRight()  { await pressKey('ArrowRight', 'ArrowRight', 39); }
-  async function pressCtrlB()  { await pressKey('b', 'KeyB', 66, 2); }
-  async function pressCtrlI()  { await pressKey('i', 'KeyI', 73, 2); }
+  async function pressRight() { await pressKey('ArrowRight', 'ArrowRight', 39); }
+  async function pressCtrlB() { await pressKey('b', 'KeyB', 66, 2); }
+  async function pressCtrlI() { await pressKey('i', 'KeyI', 73, 2); }
+  async function pressLeft() { await pressKey('ArrowLeft', 'ArrowLeft', 37); }
+  async function pressDelete() { await pressKey('Delete', 'Delete', 46); }
 
   // --- Mouse ---
   async function debugClick(x, y) {
@@ -395,40 +397,46 @@ document.addEventListener('DOMContentLoaded', () => {
   // =======================================================================
 
   const TEMPLATE_CMDS = new Set(['\\frac']);
-  const SINGLE_TMPL   = new Set([
-    '\\sqrt','\\cbrt','\\hat','\\bar','\\vec','\\tilde','\\dot','\\ddot',
-    '\\overline','\\underline','\\widehat','\\widetilde','\\overrightarrow',
+  const SINGLE_TMPL = new Set([
+    '\\sqrt', '\\cbrt', '\\hat', '\\bar', '\\vec', '\\tilde', '\\dot', '\\ddot',
+    '\\overline', '\\underline', '\\widehat', '\\widetilde', '\\overrightarrow',
   ]);
-  
+
   // SIMPLE_CMDS set - only one definition
-  const SIMPLE_CMDS   = new Set([
-    '\\alpha','\\beta','\\gamma','\\delta','\\epsilon','\\varepsilon',
-    '\\zeta','\\eta','\\theta','\\vartheta','\\iota','\\kappa',
-    '\\lambda','\\mu','\\nu','\\xi','\\pi','\\varpi',
-    '\\rho','\\varrho','\\sigma','\\varsigma','\\tau',
-    '\\upsilon','\\phi','\\varphi','\\chi','\\psi','\\omega',
-    '\\Gamma','\\Delta','\\Theta','\\Lambda','\\Xi','\\Pi',
-    '\\Sigma','\\Upsilon','\\Phi','\\Psi','\\Omega',
-    '\\sum','\\prod','\\coprod','\\int','\\iint','\\iiint',
-    '\\oint','\\bigcup','\\bigcap','\\bigoplus','\\bigotimes',
-    '\\leq','\\geq','\\neq','\\approx','\\equiv','\\sim',
-    '\\simeq','\\cong','\\propto','\\ll','\\gg','\\subset',
-    '\\supset','\\subseteq','\\supseteq','\\in','\\notin',
-    '\\ni','\\mid','\\parallel','\\perp',
-    '\\leftarrow','\\rightarrow','\\leftrightarrow',
-    '\\Leftarrow','\\Rightarrow','\\Leftrightarrow',
-    '\\uparrow','\\downarrow','\\mapsto',
-    '\\infty','\\partial','\\nabla','\\forall','\\exists',
-    '\\neg','\\cdot','\\cdots','\\ldots','\\vdots','\\ddots',
-    '\\times','\\div','\\pm','\\mp','\\circ','\\bullet',
-    '\\star','\\dagger','\\oplus','\\otimes',
-    '\\ell','\\hbar','\\Re','\\Im','\\wp','\\aleph',
-    '\\sin','\\cos','\\tan','\\cot','\\sec','\\csc',
-    '\\arcsin','\\arccos','\\arctan','\\sinh','\\cosh','\\tanh',
-    '\\log','\\ln','\\exp','\\lim','\\min','\\max',
-    '\\sup','\\inf','\\det','\\dim','\\ker','\\gcd',
-    '\\deg','\\hom','\\arg',
-    '\\quad','\\qquad',
+  const SIMPLE_CMDS = new Set([
+    '\\alpha', '\\beta', '\\gamma', '\\delta', '\\epsilon', '\\varepsilon',
+    '\\zeta', '\\eta', '\\theta', '\\vartheta', '\\iota', '\\kappa',
+    '\\lambda', '\\mu', '\\nu', '\\xi', '\\pi', '\\varpi',
+    '\\rho', '\\varrho', '\\sigma', '\\varsigma', '\\tau',
+    '\\upsilon', '\\phi', '\\varphi', '\\chi', '\\psi', '\\omega',
+    '\\Gamma', '\\Delta', '\\Theta', '\\Lambda', '\\Xi', '\\Pi',
+    '\\Sigma', '\\Upsilon', '\\Phi', '\\Psi', '\\Omega',
+    '\\sum', '\\prod', '\\coprod', '\\int', '\\iint', '\\iiint',
+    '\\oint', '\\bigcup', '\\bigcap', '\\bigoplus', '\\bigotimes',
+    '\\leq', '\\geq', '\\neq', '\\approx', '\\equiv', '\\sim',
+    '\\simeq', '\\cong', '\\propto', '\\ll', '\\gg', '\\subset',
+    '\\supset', '\\subseteq', '\\supseteq', '\\in', '\\notin',
+    '\\ni', '\\mid', '\\parallel', '\\perp',
+    '\\leftarrow', '\\rightarrow', '\\leftrightarrow',
+    '\\Leftarrow', '\\Rightarrow', '\\Leftrightarrow',
+    '\\uparrow', '\\downarrow', '\\mapsto',
+    '\\infty', '\\partial', '\\nabla', '\\forall', '\\exists',
+    '\\neg', '\\cdot', '\\cdots', '\\ldots', '\\vdots', '\\ddots',
+    '\\times', '\\div', '\\pm', '\\mp', '\\circ', '\\bullet',
+    '\\star', '\\dagger', '\\oplus', '\\otimes',
+    '\\ell', '\\hbar', '\\Re', '\\Im', '\\wp', '\\aleph',
+    '\\sin', '\\cos', '\\tan', '\\cot', '\\sec', '\\csc',
+    '\\arcsin', '\\arccos', '\\arctan', '\\sinh', '\\cosh', '\\tanh',
+    '\\log', '\\ln', '\\exp', '\\lim', '\\min', '\\max',
+    '\\sup', '\\inf', '\\det', '\\dim', '\\ker', '\\gcd',
+    '\\deg', '\\hom', '\\arg',
+    '\\quad', '\\qquad',
+  ]);
+
+  // Operators that auto-enter a subscript/limit mode in GDocs
+  const SUM_LIKE = new Set([
+    '\\sum', '\\prod', '\\coprod', '\\int', '\\iint', '\\iiint',
+    '\\oint', '\\bigcup', '\\bigcap', '\\bigoplus', '\\bigotimes', '\\lim'
   ]);
 
   // latexToActions function - only one definition
@@ -441,208 +449,271 @@ document.addEventListener('DOMContentLoaded', () => {
     const pushRt = () => A.push({ a: 'right' });
 
     function braceGroup(p) {
-        if (p >= latex.length || latex[p] !== '{') return null;
-        let d = 0, s = p + 1, j = p;
-        while (j < latex.length) {
-            if (latex[j] === '{') d++;
-            else if (latex[j] === '}') {
-                d--;
-                if (!d) break;
-            }
-            j++;
+      if (p >= latex.length || latex[p] !== '{') return null;
+      let d = 0, s = p + 1, j = p;
+      while (j < latex.length) {
+        if (latex[j] === '{') d++;
+        else if (latex[j] === '}') {
+          d--;
+          if (!d) break;
         }
-        return { content: latex.substring(s, j), end: j + 1 };
+        j++;
+      }
+      return { content: latex.substring(s, j), end: j + 1 };
     }
 
     function readArg(p) {
-        if (p >= latex.length) return { content: '', end: p };
-        if (latex[p] === '{') return braceGroup(p);
-        if (latex[p] === '\\') {
-            let j = p + 1;
-            while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
-            return { content: latex.substring(p, j), end: j };
-        }
-        return { content: latex[p], end: p + 1 };
+      if (p >= latex.length) return { content: '', end: p };
+      if (latex[p] === '{') return braceGroup(p);
+      if (latex[p] === '\\') {
+        let j = p + 1;
+        while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
+        return { content: latex.substring(p, j), end: j };
+      }
+      return { content: latex[p], end: p + 1 };
     }
 
     while (i < latex.length) {
-        // Skip whitespace - equations don't need spaces
-        if (latex[i] === ' ' || latex[i] === '\t') {
-            i++;
-            continue;
-        }
-
-        if (latex[i] === '\\') {
-            let j = i + 1;
-            // Handle single-character escaped symbols
-            if (j < latex.length && !/[a-zA-Z]/.test(latex[j])) {
-                const sc = latex.substring(i, j + 1);
-                if (sc === '\\\\') A.push({ a: 'enter' });
-                else if (sc === '\\{') pushT('(');
-                else if (sc === '\\}') pushT(')');
-                else pushT(latex[j]);
-                i = j + 1;
-                continue;
-            }
-            
-            // Read the full command
-            while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
-            const cmd = latex.substring(i, j);
-            i = j;
-
-            // Skip unsupported commands
-            if (['\\left', '\\right', '\\displaystyle', '\\textstyle'].includes(cmd)) {
-                continue;
-            }
-
-            // Text commands
-            if (['\\text', '\\mathrm', '\\textrm', '\\textit', '\\textbf',
-                 '\\mathbf', '\\mathit', '\\mathcal', '\\mathbb'].includes(cmd)) {
-                const g = braceGroup(i);
-                if (g) {
-                    pushT('"');
-                    for (const c of g.content) pushT(c);
-                    pushT('"');
-                    i = g.end;
-                }
-                continue;
-            }
-
-            // \frac{a}{b}
-            if (cmd === '\\frac') {
-                // Type the command and press space to convert
-                for (const c of cmd) pushT(c);
-                pushSp();
-                
-                const a1 = braceGroup(i);
-                if (a1) {
-                    A.push(...latexToActions(a1.content));
-                    i = a1.end;
-                }
-                
-                pushTb(); // Tab to denominator
-                
-                const a2 = braceGroup(i);
-                if (a2) {
-                    A.push(...latexToActions(a2.content));
-                    i = a2.end;
-                }
-                
-                pushRt(); // Right arrow to exit fraction
-                continue;
-            }
-
-            // \sqrt{x}
-            if (SINGLE_TMPL.has(cmd)) {
-                for (const c of cmd) pushT(c);
-                pushSp(); // Space to convert command
-                
-                const g = braceGroup(i);
-                if (g) {
-                    A.push(...latexToActions(g.content));
-                    i = g.end;
-                }
-                
-                pushRt(); // Right arrow to exit
-                continue;
-            }
-
-            // Simple symbols: \alpha, \sum, etc.
-            if (SIMPLE_CMDS.has(cmd)) {
-                // Type the command
-                for (const c of cmd) pushT(c);
-                
-                // For math symbols, we need space to convert
-                pushSp();
-
-                // Robustness for common user error: \sum{limit} instead of \sum_{limit}
-                if (['\\sum', '\\prod', '\\int', '\\iint', '\\iiint', '\\oint', '\\lim', '\\bigcup', '\\bigcap'].includes(cmd)) {
-                    if (i < latex.length && latex[i] === '{') {
-                        pushT('_');
-                        const g = braceGroup(i);
-                        if (g) {
-                            A.push(...latexToActions(g.content));
-                            i = g.end;
-                            pushRt();
-                        }
-                    }
-                }
-                continue;
-            }
-
-            // Unknown command - type it and press space to try conversion
-            for (const c of cmd) pushT(c);
-            pushSp();
-            
-            // Handle arguments if any
-            if (i < latex.length && latex[i] === '{') {
-                const g = braceGroup(i);
-                if (g) {
-                    A.push(...latexToActions(g.content));
-                    i = g.end;
-                    pushRt();
-                }
-            }
-            continue;
-        }
-
-        // Subscript
-        if (latex[i] === '_') {
-            i++;
-            pushT('_');
-            
-            // Check if the next character is {
-            if (i < latex.length && latex[i] === '{') {
-                const g = braceGroup(i);
-                if (g) {
-                    A.push(...latexToActions(g.content));
-                    i = g.end;
-                }
-            } else {
-                // Single character subscript
-                const a = readArg(i);
-                A.push(...latexToActions(a.content));
-                i = a.end;
-            }
-            
-            pushRt(); // Right arrow to exit subscript
-            continue;
-        }
-
-        // Superscript
-        if (latex[i] === '^') {
-            i++;
-            pushT('^');
-            
-            // Check if the next character is {
-            if (i < latex.length && latex[i] === '{') {
-                const g = braceGroup(i);
-                if (g) {
-                    A.push(...latexToActions(g.content));
-                    i = g.end;
-                }
-            } else {
-                // Single character superscript
-                const a = readArg(i);
-                A.push(...latexToActions(a.content));
-                i = a.end;
-            }
-            
-            pushRt(); // Right arrow to exit superscript
-            continue;
-        }
-
-        // Skip braces
-        if (latex[i] === '{' || latex[i] === '}') {
-            i++;
-            continue;
-        }
-
-        // Regular character
-        pushT(latex[i]);
+      // Skip whitespace - equations don't need spaces
+      if (latex[i] === ' ' || latex[i] === '\t') {
         i++;
+        continue;
+      }
+
+      if (latex[i] === '\\') {
+        let j = i + 1;
+        // Handle single-character escaped symbols
+        if (j < latex.length && !/[a-zA-Z]/.test(latex[j])) {
+          const sc = latex.substring(i, j + 1);
+          if (sc === '\\\\') A.push({ a: 'enter' });
+          else if (sc === '\\{') pushT('(');
+          else if (sc === '\\}') pushT(')');
+          else pushT(latex[j]);
+          i = j + 1;
+          continue;
+        }
+
+        // Read the full command
+        while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
+        const cmd = latex.substring(i, j);
+        i = j;
+
+        // Skip unsupported commands
+        if (['\\left', '\\right', '\\displaystyle', '\\textstyle'].includes(cmd)) {
+          continue;
+        }
+
+        // Text commands
+        if (['\\text', '\\mathrm', '\\textrm', '\\textit', '\\textbf',
+          '\\mathbf', '\\mathit', '\\mathcal', '\\mathbb'].includes(cmd)) {
+          const g = braceGroup(i);
+          if (g) {
+            pushT('"');
+            for (const c of g.content) pushT(c);
+            pushT('"');
+            i = g.end;
+          }
+          continue;
+        }
+
+        // \frac{a}{b}
+        if (cmd === '\\frac') {
+          // Type the command and press space to convert
+          for (const c of cmd) pushT(c);
+          pushSp();
+
+          const a1 = braceGroup(i);
+          if (a1) {
+            A.push(...latexToActions(a1.content));
+            i = a1.end;
+          }
+
+          pushTb(); // Tab to denominator
+
+          const a2 = braceGroup(i);
+          if (a2) {
+            A.push(...latexToActions(a2.content));
+            i = a2.end;
+          }
+
+          pushRt(); // Right arrow to exit fraction
+          continue;
+        }
+
+        // \sqrt{x}
+        if (SINGLE_TMPL.has(cmd)) {
+          for (const c of cmd) pushT(c);
+          pushSp(); // Space to convert command
+
+          const g = braceGroup(i);
+          if (g) {
+            A.push(...latexToActions(g.content));
+            i = g.end;
+          }
+
+          pushRt(); // Right arrow to exit
+          continue;
+        }
+
+        // Simple symbols: \alpha, \sum, etc.
+        if (SIMPLE_CMDS.has(cmd)) {
+          // Type the command
+          for (const c of cmd) pushT(c);
+          pushSp(); // Space to convert
+
+          if (SUM_LIKE.has(cmd)) {
+            // Special handling for operators like \sum:
+            // GDocs behavior: \sum enters the lower limit (subscript) automatically.
+            // We use Right Arrow to navigate to upper limit and then out.
+
+            // 1. Handle Subscript (Lower Limit)
+            // Check if next significant char is '_' or if it's implicit (e.g. \sum{...})
+            let hasSub = false;
+            let k = i;
+            while (k < latex.length && (latex[k] === ' ' || latex[k] === '\t')) k++;
+
+            if (k < latex.length && latex[k] === '_') {
+              hasSub = true;
+              i = k + 1; // Consume '_'
+              // Check for brace group
+              if (i < latex.length && latex[i] === '{') {
+                const g = braceGroup(i);
+                if (g) {
+                  A.push(...latexToActions(g.content));
+                  i = g.end;
+                }
+              } else {
+                // Single char arg
+                const a = readArg(i);
+                A.push(...latexToActions(a.content));
+                i = a.end;
+              }
+              pushRt(); // Move to superscript
+            } else if (k < latex.length && latex[k] === '{' && cmd !== '\\lim') {
+              // Implicit subscript case \sum{...} (except \lim generally behaves differently or same?)
+              // Actually \sum{...} is non-standard LaTeX but common user input for \sum_{...}
+              // Let's support it if GDocs supports it
+              hasSub = true;
+              i = k; // Point to '{'
+              const g = braceGroup(i);
+              if (g) {
+                A.push(...latexToActions(g.content));
+                i = g.end;
+              }
+              pushRt();
+            } else {
+              // No subscript provided. 
+              // If GDocs automatically enters sub, we must Right Arrow to skip it.
+              pushRt();
+            }
+
+            // 2. Handle Superscript (Upper Limit)
+            let hasSup = false;
+            k = i;
+            while (k < latex.length && (latex[k] === ' ' || latex[k] === '\t')) k++;
+
+            if (k < latex.length && latex[k] === '^') {
+              hasSup = true;
+              i = k + 1; // Consume '^'
+              if (i < latex.length && latex[i] === '{') {
+                const g = braceGroup(i);
+                if (g) {
+                  A.push(...latexToActions(g.content));
+                  i = g.end;
+                }
+              } else {
+                const a = readArg(i);
+                A.push(...latexToActions(a.content));
+                i = a.end;
+              }
+              pushRt(); // Exit operator
+            } else {
+              // No superscript provided.
+              // If GDocs automatically entered slots, might need Right Arrow to exit?
+              // Or to skip empty super?
+              pushRt();
+            }
+            continue; // Done with this command
+          }
+
+          // Fallback for standard symbols (\alpha, \beta etc.)
+          // They just continue to the next loop iteration where '_' and '^' are handled normally.
+          continue;
+        }
+
+        // Unknown command - type it and press space to try conversion
+        for (const c of cmd) pushT(c);
+        pushSp();
+
+        // Handle arguments if any
+        if (i < latex.length && latex[i] === '{') {
+          const g = braceGroup(i);
+          if (g) {
+            A.push(...latexToActions(g.content));
+            i = g.end;
+            pushRt();
+          }
+        }
+        continue;
+      }
+
+      // Subscript
+      if (latex[i] === '_') {
+        i++;
+        pushT('_');
+
+        // Check if the next character is {
+        if (i < latex.length && latex[i] === '{') {
+          const g = braceGroup(i);
+          if (g) {
+            A.push(...latexToActions(g.content));
+            i = g.end;
+          }
+        } else {
+          // Single character subscript
+          const a = readArg(i);
+          A.push(...latexToActions(a.content));
+          i = a.end;
+        }
+
+        pushRt(); // Right arrow to exit subscript
+        continue;
+      }
+
+      // Superscript
+      if (latex[i] === '^') {
+        i++;
+        pushT('^');
+
+        // Check if the next character is {
+        if (i < latex.length && latex[i] === '{') {
+          const g = braceGroup(i);
+          if (g) {
+            A.push(...latexToActions(g.content));
+            i = g.end;
+          }
+        } else {
+          // Single character superscript
+          const a = readArg(i);
+          A.push(...latexToActions(a.content));
+          i = a.end;
+        }
+
+        pushRt(); // Right arrow to exit superscript
+        continue;
+      }
+
+      // Skip braces
+      if (latex[i] === '{' || latex[i] === '}') {
+        i++;
+        continue;
+      }
+
+      // Regular character
+      pushT(latex[i]);
+      i++;
     }
-    
+
     return A;
   }
 
@@ -652,11 +723,14 @@ document.addEventListener('DOMContentLoaded', () => {
   async function execActions(actions) {
     for (const a of actions) {
       switch (a.a) {
-        case 'type':  await typeChar(a.v); break;
-        case 'space': await pressSpace();  break;
-        case 'tab':   await pressTab();    break;
-        case 'right': await pressRight();  break;
-        case 'enter': await pressEnter();  break;
+        case 'type': await typeChar(a.v); break;
+        case 'space': await pressSpace(); break;
+        case 'tab': await pressTab(); break;
+        case 'right': await pressRight(); break;
+        case 'enter': await pressEnter(); break;
+        case 'backspace': await pressBackspace(); break;
+        case 'left': await pressLeft(); break;
+        case 'delete': await pressDelete(); break;
       }
     }
   }
@@ -671,14 +745,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const runs = [], re = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
     let last = 0, m;
     while ((m = re.exec(line)) !== null) {
-      if (m.index > last) runs.push({ t: line.substring(last, m.index), b:false, i:false });
-      if      (m[2] !== undefined) runs.push({ t:m[2], b:true, i:true });
-      else if (m[3] !== undefined) runs.push({ t:m[3], b:true, i:false });
-      else if (m[4] !== undefined) runs.push({ t:m[4], b:false, i:true });
-      else if (m[5] !== undefined) runs.push({ t:m[5], b:false, i:false });
+      if (m.index > last) runs.push({ t: line.substring(last, m.index), b: false, i: false });
+      if (m[2] !== undefined) runs.push({ t: m[2], b: true, i: true });
+      else if (m[3] !== undefined) runs.push({ t: m[3], b: true, i: false });
+      else if (m[4] !== undefined) runs.push({ t: m[4], b: false, i: true });
+      else if (m[5] !== undefined) runs.push({ t: m[5], b: false, i: false });
       last = m.index + m[0].length;
     }
-    if (last < line.length) runs.push({ t: line.substring(last), b:false, i:false });
+    if (last < line.length) runs.push({ t: line.substring(last), b: false, i: false });
     return runs;
   }
 
@@ -713,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check content script
     try {
       const pong = await csMsg({ action: 'ping' });
-      if (!pong?.alive)    throw new Error('Content script not loaded.');
+      if (!pong?.alive) throw new Error('Content script not loaded.');
       if (!pong.isGoogleDocs) throw new Error('Page is not Google Docs.');
     } catch (err) {
       flash(err.message + '\nReload the Google Docs page and try again.', 'error', 6000);
