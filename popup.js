@@ -31,6 +31,28 @@ document.addEventListener('DOMContentLoaded', () => {
   let parsedSegments = [];
   let activeTabId = null;
   let dbgAttached = false;
+  let isBold = false;
+  let isItalic = false;
+  // Track the last char processed to handle formatting toggles across segments
+  let lastProcessedChar = '\n';
+
+  // Mapping for simple inline equations to Unicode
+  const LATEX_TO_UNICODE = {
+    '\\alpha': 'α', '\\beta': 'β', '\\gamma': 'γ', '\\delta': 'δ', '\\epsilon': 'ε',
+    '\\zeta': 'ζ', '\\eta': 'η', '\\theta': 'θ', '\\iota': 'ι', '\\kappa': 'κ',
+    '\\lambda': 'λ', '\\mu': 'μ', '\\nu': 'ν', '\\xi': 'ξ', '\\pi': 'π',
+    '\\rho': 'ρ', '\\sigma': 'σ', '\\tau': 'τ', '\\upsilon': 'υ', '\\phi': 'φ',
+    '\\chi': 'χ', '\\psi': 'ψ', '\\omega': 'ω',
+    '\\Gamma': 'Γ', '\\Delta': 'Δ', '\\Theta': 'Θ', '\\Lambda': 'Λ', '\\Xi': 'Ξ',
+    '\\Pi': 'Π', '\\Sigma': 'Σ', '\\Upsilon': 'Υ', '\\Phi': 'Φ', '\\Psi': 'Ψ', '\\Omega': 'Ω',
+    '\\cdot': '·', '\\times': '×', '\\div': '÷', '\\pm': '±', '\\mp': '∓',
+    '\\leq': '≤', '\\geq': '≥', '\\neq': '≠', '\\approx': '≈', '\\equiv': '≡',
+    '\\infty': '∞', '\\partial': '∂', '\\nabla': '∇', '\\forall': '∀', '\\exists': '∃',
+    '\\rightarrow': '→', '\\leftarrow': '←', '\\leftrightarrow': '↔',
+    '\\Rightarrow': '⇒', '\\Leftarrow': '⇐', '\\Leftrightarrow': '⇔',
+    '\\in': '∈', '\\notin': '∉', '\\subset': '⊂', '\\subseteq': '⊆',
+    '\\cup': '∪', '\\cap': '∩',
+  };
 
   // =======================================================================
   // Section visibility
@@ -56,7 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // =======================================================================
   loadBtn.addEventListener('click', async () => {
     try {
-      inputText.value = await navigator.clipboard.readText();
+      const raw = await navigator.clipboard.readText();
+      // Sanitize: remove \r to prevent ghost newlines
+      inputText.value = raw.replace(/\r/g, '');
       flash('Loaded from clipboard.', 'success');
     } catch {
       flash('Clipboard access denied — paste manually.', 'error');
@@ -72,11 +96,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let last = 0, m;
     while ((m = regex.exec(text)) !== null) {
       if (m.index > last) segments.push({ type: 'text', content: text.substring(last, m.index) });
-      if (m[1] !== undefined) segments.push({ type: 'equation', content: m[1].trim(), display: true });
-      else if (m[2] !== undefined) segments.push({ type: 'equation', content: m[2].trim(), display: false });
+
+      if (m[1] !== undefined) {
+        // Display equation: always equation editor
+        segments.push({ type: 'equation', content: m[1].trim(), display: true });
+      } else if (m[2] !== undefined) {
+        // Inline equation: check for Unicode substitution
+        let content = m[2].trim();
+        // Remove surrounding braces if any, e.g. {\beta}
+        if (content.startsWith('{') && content.endsWith('}')) {
+          content = content.slice(1, -1).trim();
+        }
+
+        if (LATEX_TO_UNICODE[content]) {
+          // It's a simple symbol -> convert to Text segment
+          segments.push({ type: 'text', content: LATEX_TO_UNICODE[content] });
+        } else {
+          // Complex or unknown -> Equation editor
+          // If content is just a command like \beta without braces but failed lookup?
+          // Re-trim just in case
+          segments.push({ type: 'equation', content: m[2].trim(), display: false });
+        }
+      }
       last = regex.lastIndex;
     }
     if (last < text.length) segments.push({ type: 'text', content: text.substring(last) });
+
     // merge adjacent text
     const merged = [];
     for (const s of segments) {
@@ -254,6 +299,10 @@ document.addEventListener('DOMContentLoaded', () => {
       nativeVirtualKeyCode: vk,
       modifiers: mod,
     });
+
+    // Update state for formatting logic
+    lastProcessedChar = ch;
+
     await sleep(80);
   }
 
@@ -283,6 +332,15 @@ document.addEventListener('DOMContentLoaded', () => {
       nativeVirtualKeyCode: vk,
       modifiers,
     });
+
+    // Update state: if text is provided (like space or newline), use it.
+    // Otherwise use a placeholder or the key name?
+    // For our purposes (bold/italic toggles), space and newline are critical.
+    if (text) lastProcessedChar = text;
+    else if (key === 'Enter') lastProcessedChar = '\n';
+    else if (key === 'Space') lastProcessedChar = ' ';
+    else if (key === 'Tab') lastProcessedChar = '\t';
+
     await sleep(350);
   }
 
@@ -739,36 +797,65 @@ document.addEventListener('DOMContentLoaded', () => {
   // Plain-text insertion (with basic Markdown bold/italic)
   // =======================================================================
 
-  /** Parse a single line into runs with bold/italic flags. */
-  function mdRuns(line) {
-    line = line.replace(/^#{1,6}\s+/, '');
-    const runs = [], re = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
-    let last = 0, m;
-    while ((m = re.exec(line)) !== null) {
-      if (m.index > last) runs.push({ t: line.substring(last, m.index), b: false, i: false });
-      if (m[2] !== undefined) runs.push({ t: m[2], b: true, i: true });
-      else if (m[3] !== undefined) runs.push({ t: m[3], b: true, i: false });
-      else if (m[4] !== undefined) runs.push({ t: m[4], b: false, i: true });
-      else if (m[5] !== undefined) runs.push({ t: m[5], b: false, i: false });
-      last = m.index + m[0].length;
-    }
-    if (last < line.length) runs.push({ t: line.substring(last), b: false, i: false });
-    return runs;
-  }
-
+  /**
+   * Process text with stateful Markdown formatting.
+   * Handles bold (** or __), italic (* or _), and newlines.
+   * State (isBold, isItalic) persists across calls.
+   */
   async function insertText(text) {
-    const lines = text.split('\n');
-    for (let li = 0; li < lines.length; li++) {
-      const runs = mdRuns(lines[li]);
-      for (const r of runs) {
-        if (!r.t) continue;
-        if (r.b) await pressCtrlB();
-        if (r.i) await pressCtrlI();
-        for (const ch of r.t) await typeChar(ch);
-        if (r.i) await pressCtrlI();
-        if (r.b) await pressCtrlB();
+    const re = /(\n\n+)|(\n)|(\*\*|__)|(\*|_)|([^\n\*_]+)/g;
+
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      if (m[1]) { // Double newline -> Enter
+        await pressEnter();
+      } else if (m[2]) { // Single newline -> Space
+        await typeChar(' ');
+      } else if (m[3]) { // Bold toggle: ** or __
+        const token = m[3];
+        const nextChar = text[re.lastIndex] || ' ';
+        // Use global lastProcessedChar if at start of string
+        const prevChar = m.index > 0 ? text[m.index - 1] : lastProcessedChar;
+
+        let shouldToggle = false;
+        // OPEN condition: not bold, followed by non-space
+        if (!isBold && nextChar !== ' ' && nextChar !== '\n') shouldToggle = true;
+        // CLOSE condition: bold, preceded by non-space
+        else if (isBold && prevChar !== ' ' && prevChar !== '\n') shouldToggle = true;
+
+        if (shouldToggle) {
+          isBold = !isBold;
+          await pressCtrlB();
+        } else {
+          // Treat as literal text
+          for (const ch of token) await typeChar(ch);
+        }
+
+      } else if (m[4]) { // Italic toggle: * or _
+        const token = m[4];
+        const nextChar = text[re.lastIndex] || ' ';
+        // Use global lastProcessedChar if at start of string
+        const prevChar = m.index > 0 ? text[m.index - 1] : lastProcessedChar;
+
+        let shouldToggle = false;
+
+        // OPEN condition: not italic, followed by non-space
+        if (!isItalic && nextChar !== ' ' && nextChar !== '\n') shouldToggle = true;
+        // CLOSE condition: italic, preceded by non-space
+        else if (isItalic && prevChar !== ' ' && prevChar !== '\n') shouldToggle = true;
+
+        if (shouldToggle) {
+          isItalic = !isItalic;
+          await pressCtrlI();
+        } else {
+          // Treat as literal text
+          for (const ch of token) await typeChar(ch);
+        }
+
+      } else if (m[5]) { // Text content
+        const content = m[5];
+        for (const ch of content) await typeChar(ch);
       }
-      if (li < lines.length - 1) await pressEnter();
     }
   }
 
@@ -805,6 +892,10 @@ document.addEventListener('DOMContentLoaded', () => {
       await dbgAttach(activeTabId);
       setRunStatus('Debugger attached. Focusing editor…');
       await focusEditor();
+
+      // Reset formatting state
+      isBold = false;
+      isItalic = false;
 
       const total = parsedSegments.length;
 
